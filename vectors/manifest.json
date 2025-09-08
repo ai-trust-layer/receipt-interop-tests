@@ -1,0 +1,12 @@
+{
+  "ok.json": "pass",
+  "borderline.json": "pass",
+  "blocked.json": "pass",
+  "reanchor.json": "pass",
+  "highrisk.json": "pass",
+  "missing_field.json": "fail",
+  "bad_hash_format.json": "fail",
+  "wrong_finality.json": "fail",
+  "extra_prop.json": "fail",
+  "minimal_legacy.json": "fail"
+}
