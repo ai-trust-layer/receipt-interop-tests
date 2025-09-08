@@ -9,30 +9,41 @@ on:
         required: false
         type: string
         default: '20'
+
 jobs:
   interop:
     runs-on: ubuntu-latest
     steps:
+      
+      - name: Checkout caller repo
+        uses: actions/checkout@v4
+        with:
+          path: caller
+
+     
       - name: Checkout interop suite
         uses: actions/checkout@v4
-        with: { path: interop }
+        with:
+          repository: ai-trust-layer/receipt-interop-tests
+          ref: main
+          path: suite
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with: { node-version: ${{ inputs.node-version }} }
 
       - name: Install runner deps
-        working-directory: interop/runner
+        working-directory: suite/runner
         run: npm ci || npm i
 
       - name: Run interop against provided schema
-        working-directory: interop/runner
+        working-directory: suite/runner
         env:
-          SCHEMA: ${{ github.workspace }}/${{ inputs.schema-path }}
+          SCHEMA: ${{ github.workspace }}/caller/${{ inputs.schema-path }}
         run: node run.mjs
 
       - name: Upload report
         uses: actions/upload-artifact@v4
         with:
           name: interop-report
-          path: interop/report.json
+          path: suite/report.json
