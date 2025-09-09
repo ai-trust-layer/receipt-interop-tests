@@ -1,49 +1,38 @@
-name: Interop Suite
+name: Interop Gate
 on:
-  workflow_call:
-    inputs:
-      schema-path:
-        required: true
-        type: string
-      node-version:
-        required: false
-        type: string
-        default: '20'
-
+  pull_request:
+    paths:
+      - 'schema/**'
+      - 'examples/**'
+      - 'receipt-spec-v1.md'
+      - '**/*.md'
 jobs:
   interop:
     runs-on: ubuntu-latest
     steps:
-      
-      - name: Checkout caller repo
+      - name: Checkout spec (PR)
         uses: actions/checkout@v4
-        with:
-          path: caller
 
-     
-      - name: Checkout interop suite
+      - name: Checkout interop tests
         uses: actions/checkout@v4
         with:
           repository: ai-trust-layer/receipt-interop-tests
-          ref: main
-          path: suite
+          path: interop
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with: { node-version: ${{ inputs.node-version }} }
+      - name: Checkout Python SDK
+        run: git clone https://github.com/ai-trust-layer/receipt-sdk-py.git sdk-py
 
-      - name: Install runner deps
-        working-directory: suite/runner
-        run: npm ci || npm i
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
 
-      - name: Run interop against provided schema
-        working-directory: suite/runner
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install 'jsonschema==4.*' 'click==8.*'
+
+      - name: Run interop against PR content
         env:
-          SCHEMA: ${{ github.workspace }}/caller/${{ inputs.schema-path }}
-        run: node run.mjs
-
-      - name: Upload report
-        uses: actions/upload-artifact@v4
-        with:
-          name: interop-report
-          path: suite/report.json
+          PYTHONPATH: sdk-py
+          SCHEMA_URL: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.pull_request.head.sha }}/schema/receipt.schema.json
+          OK_URL: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.pull_request.head.sha }}/examples/ok.json
+        run: python interop/runner.py
