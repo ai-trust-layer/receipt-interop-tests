@@ -1,7 +1,7 @@
 import json, hashlib, subprocess, sys, urllib.request, os, tempfile, pathlib
 
-SCHEMA_URL = "https://raw.githubusercontent.com/ai-trust-layer/receipt-spec/v1.0.3/schema/receipt.schema.json"
-OK_URL     = "https://raw.githubusercontent.com/ai-trust-layer/receipt-spec/v1.0.3/examples/ok.json"
+SCHEMA_URL = os.getenv("SCHEMA_URL", "https://raw.githubusercontent.com/ai-trust-layer/receipt-spec/v1.0.3/schema/receipt.schema.json")
+OK_URL     = os.getenv("OK_URL",     "https://raw.githubusercontent.com/ai-trust-layer/receipt-spec/v1.0.3/examples/ok.json")
 
 ROOT = pathlib.Path.cwd()
 TMP  = ROOT / "tmp"
