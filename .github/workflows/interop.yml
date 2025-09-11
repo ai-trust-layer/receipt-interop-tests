@@ -3,39 +3,35 @@ on:
   workflow_dispatch:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [main]
 jobs:
-  interop:
-    runs-on: ubuntu-latest
+  Interop:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-
       - name: Clone JS SDK
-        run: git clone https://github.com/ai-trust-layer/receipt-sdk-js.git receipt-sdk-js
-
+        run: git clone --depth 1 --branch main https://github.com/ai-trust-layer/receipt-sdk-js.git receipt-sdk-js
       - name: Setup Node
         uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
+        with: { node-version: 20 }
       - name: Install JS deps
+        run: cd receipt-sdk-js && npm ci || npm i
+      - name: Assert noble hook gone
         run: |
-          cd receipt-sdk-js
-          npm ci || npm i
-
+          set -e
+          head -n 8 receipt-sdk-js/src/signature.mjs
+          if grep -q "etc\.sha512Sync" receipt-sdk-js/src/signature.mjs; then
+            echo "Legacy noble hook still present"; exit 1; fi
+          git -C receipt-sdk-js log -1 --oneline
       - name: Clone Py SDK
-        run: git clone https://github.com/ai-trust-layer/receipt-sdk-py.git receipt-sdk-py
-
+        run: git clone --depth 1 --branch main https://github.com/ai-trust-layer/receipt-sdk-py.git receipt-sdk-py
       - name: Setup Python
         uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
+        with: { python-version: '3.12' }
       - name: Install Py deps
         run: |
           python -m pip install --upgrade pip
           python -m pip install pynacl
-
       - name: Run interop
         env:
           PY: python3
