@@ -1,49 +1,32 @@
-name: Interop Suite
+name: Interop
 on:
-  workflow_call:
-    inputs:
-      schema-path:
-        required: true
-        type: string
-      node-version:
-        required: false
-        type: string
-        default: '20'
-
+  pull_request:
+  push:
+    branches: [ main ]
 jobs:
   interop:
     runs-on: ubuntu-latest
     steps:
-      
-      - name: Checkout caller repo
-        uses: actions/checkout@v4
-        with:
-          path: caller
-
-     
-      - name: Checkout interop suite
-        uses: actions/checkout@v4
-        with:
-          repository: ai-trust-layer/receipt-interop-tests
-          ref: main
-          path: suite
-
+      - uses: actions/checkout@v4
+      - name: Clone JS SDK
+        run: git clone https://github.com/ai-trust-layer/receipt-sdk-js.git receipt-sdk-js
       - name: Setup Node
         uses: actions/setup-node@v4
-        with: { node-version: ${{ inputs.node-version }} }
-
-      - name: Install runner deps
-        working-directory: suite/runner
-        run: npm ci || npm i
-
-      - name: Run interop against provided schema
-        working-directory: suite/runner
-        env:
-          SCHEMA: ${{ github.workspace }}/caller/${{ inputs.schema-path }}
-        run: node run.mjs
-
-      - name: Upload report
-        uses: actions/upload-artifact@v4
         with:
-          name: interop-report
-          path: suite/report.json
+          node-version: '20'
+      - name: Install JS deps
+        run: |
+          cd receipt-sdk-js
+          npm ci || npm i
+      - name: Clone Py SDK
+        run: git clone https://github.com/ai-trust-layer/receipt-sdk-py.git receipt-sdk-py
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Py deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e receipt-sdk-py pynacl
+      - name: Run interop
+        run: node runner/interop.mjs
